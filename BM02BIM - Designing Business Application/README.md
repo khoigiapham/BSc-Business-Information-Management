@@ -1,5 +1,4 @@
 # ConcluDishes: A Platform to Combat Food Waste 🐵🍌
--
 ConcluDishes is a software platform that allows restaurants to sell surplus food at discounted prices. The app charges restaurants less than alternative options while providing benefits such as reduced food waste, increased profits, and customer engagement.
 ---
 # Summary Business Case
