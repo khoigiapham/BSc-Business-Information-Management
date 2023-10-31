@@ -2,7 +2,7 @@
 
 ### Tools and Techniques
 - Modeling techniques: decision trees, bagging, and boosting
-- Tools: RapidMiner
+- Tools: **RapidMiner**
 
   **Website**: [RapidMiner Official Site](https://rapidminer.com)
   
