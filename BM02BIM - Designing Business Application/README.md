@@ -18,30 +18,27 @@ The preferred solution is to develop a platform called "ConcluDishes," aimed at 
 The cost analysis outlines the software development process, which is estimated to take 6 to 9 months. It provides a breakdown of costs into categories like software development, operations, infrastructure, and marketing, ranging from one-time to annual costs.
 
 ## Assumptions and Limitations
-###General Assumptions:
+### General Assumptions:
 - Managing food leftovers in-house costs more for restaurants than using our software.
-Carbon footprint of each dish is trackable.
-Costs for dealing with leftovers include the cost of dish preparation.
-Manual dish discounting is costlier than discarding them.
-###Financial Assumptions:
-Freelance developer hourly wage in Netherlands: €23.
-Maintenance cost: 20-50% of initial app cost.
-Dedicated server cost: €80-€140/month.
-Revenue model based on a 0.1% market share of Too Good To Go ApS.
-Revenue breakdown: 48% from service fees, 52% from restaurant commission.
+- Carbon footprint of each dish is trackable.
+- Costs for dealing with leftovers include the cost of dish preparation.
+- Manual dish discounting is costlier than discarding them.
+### Financial Assumptions:
+- Freelance developer hourly wage in Netherlands: €23.
+- Maintenance cost: 20-50% of initial app cost.
+- Dedicated server cost: €80-€140/month.
+- Revenue model based on a 0.1% market share of Too Good To Go ApS.
+- Revenue breakdown: 48% from service fees, 52% from restaurant commission.
 
-###Limitations:
-Requires electronic devices and online payment.
-Language support limited to English and Dutch.
+### Limitations:
+- Requires electronic devices and online payment.
+- Language support limited to English and Dutch.
 
-##Risk Analysis
-Development Phase: Project risks include development and regulatory issues; mitigated through frequent communication and research.
-
-Implementation Phase: Product risks like customer and restaurant resistance, application bugs; mitigated through early promotion and monitoring.
-
-Ongoing Risks: Business risks include low-quality food and seasonality; mitigated by setting food standards and year-round planning.
-
-Financial Risks: Project risks include budget and revenue issues; mitigated through regular monitoring and strategy adjustments.
+## Risk Analysis
+- Development Phase: Project risks include development and regulatory issues; mitigated through frequent communication and research.
+- Implementation Phase: Product risks like customer and restaurant resistance, application bugs; mitigated through early promotion and monitoring.
+- Ongoing Risks: Business risks include low-quality food and seasonality; mitigated by setting food standards and year-round planning.
+- Financial Risks: Project risks include budget and revenue issues; mitigated through regular monitoring and strategy adjustments.
 
 ## Conclusion & Implementation Plan
 ConcluDishes aims to reduce food waste by providing an efficient system for restaurants to sell leftovers, aligning with UN's Sustainable Development Goals 2, 12, and 13. It offers a win-win solution for both restaurants and consumers, thereby contributing positively to mitigate food waste and climate change.
