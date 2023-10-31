@@ -5,6 +5,7 @@
 - Tools: RapidMiner
 
   **Website**: [RapidMiner Official Site](https://rapidminer.com)
+  
   **Description**: RapidMiner is a data science platform that provides various machine learning algorithms, data preparation methods, and model validation techniques. It's widely used for analytics teams looking to drive business outcomes with their data.
 
 ### Overview
