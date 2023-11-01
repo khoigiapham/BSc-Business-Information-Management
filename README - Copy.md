@@ -1,1 +1,0 @@
-# BSc-Business-Information-Management
