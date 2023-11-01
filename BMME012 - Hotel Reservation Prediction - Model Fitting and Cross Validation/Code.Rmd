@@ -1,6 +1,15 @@
-setwd("C:/Users/pkhoi/OneDrive - Erasmus University Rotterdam/2 Big Data/AS 2")
+---
+title: "Assignment 2"
+author: "Khoi Pham - 523755kg"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
 
-#1----
+## Question 1: 
+
+```{r, message = FALSE, warning = FALSE}
 library(readr)
 df <- read.csv("data_hotel_reservations.csv", stringsAsFactors = TRUE)
 df$arrival_year <- as.factor(df$arrival_year)
@@ -8,23 +17,20 @@ df$arrival_month <- as.factor(df$arrival_month)
 df$arrival_date <- as.factor(df$arrival_date)
 df$repeated_guest <- as.factor(df$repeated_guest)
 df$required_car_parking_space <- as.factor(df$required_car_parking_space)
-str(df)
-summary(df)
-head(df)
-tail(df)
-colSums(is.na(df))
-sapply(df, class)
-
-# create column booking_canceled
-df$booking_canceled <- ifelse(df$booking_status == "Canceled", 1, 0)
-# replace NA with 0 in column no_of_special_requests
+# (1) create column booking_canceled
+df$booking_canceled <- as.factor(ifelse(df$booking_status == "Canceled", 1, 0))
+# (2) replace NA with 0 in column no_of_special_requests
 df$no_of_special_requests[is.na(df$no_of_special_requests)] <- 0
-# remove columns Booking_ID and booking_status
+# (3) remove columns Booking_ID and booking_status
 df <- df[, !(names(df) %in% c("Booking_ID", "booking_status"))]
 # print summary of the updated data
 summary(df)
+```
 
-#2----
+## Question 2: 
+
+```{r, message=FALSE, warning=FALSE}
+library(stargazer)
 mdlLPM <- booking_canceled ~ .
 rsltLPM <- lm(mdlLPM, data = df)
 stargazer(rsltLPM, type = "text")
@@ -36,20 +42,71 @@ df[, colNumeric] <- scale(df[, colNumeric])
 mdlLAS <- booking_canceled ~ .
 # Call the glmnetUtils library
 library(glmnet)
-library(stargazer)
 X <- model.matrix(mdlLAS, data=df)
-Y <- df$booking_canceled
+Y <- as.numeric(df$booking_canceled)
 # Fit the model and store the results
 rsltLAS <- glmnet(X, Y, lambda =0.01)
 # Display the coefficients assigned by LASSO
 coefLAS <- as.matrix(coef(rsltLAS))
 stargazer(coefLAS, type = "text")
+```
+### The LASSO regression sets the following variables to 0:
+1.	X.Intercept..1
+2.	no_of_adults
+3.	no_of_children
+4.	type_of_meal_planMeal.Plan.2
+5.	type_of_meal_planMeal.Plan.3
+6.	room_type_reservedRoom_Type.2
+7.	room_type_reservedRoom_Type.3
+8.	room_type_reservedRoom_Type.4
+9.	room_type_reservedRoom_Type.5
+10.	room_type_reservedRoom_Type.6
+11.	room_type_reservedRoom_Type.7
+12.	arrival_month2
+13.	arrival_month3
+14.	arrival_month4
+15.	arrival_month5
+16.	arrival_month6
+17.	arrival_month7
+18.	arrival_month8
+19.	arrival_month9
+20.	arrival_month10
+21.	arrival_date3
+22.	arrival_date4
+23.	arrival_date5
+24.	arrival_date6
+25.	arrival_date7
+26.	arrival_date8
+27.	arrival_date9
+28.	arrival_date10
+29.	arrival_date11
+30.	arrival_date13
+31.	arrival_date14
+32.	arrival_date16
+33.	arrival_date17
+34.	arrival_date18
+35.	arrival_date19
+36.	arrival_date20
+37.	arrival_date21
+38.	arrival_date22
+39.	arrival_date23
+40.	arrival_date24
+41.	arrival_date25
+42.	arrival_date26
+43.	arrival_date27
+44.	arrival_date28
+45.	arrival_date30
+46.	arrival_date31
+47.	market_segment_typeCorporate
+48.	repeated_guest1
+49.	no_of_previous_cancellations
+50.	no_of_previous_bookings_not_canceled
 
+## Question 3: 
 
-#3----
+```{r, message=FALSE, warning=FALSE}
 library(dplyr)
 library(caret)
-df$booking_canceled<- factor(df$booking_canceled, levels = c(0,1))
 df_sample <- df %>% slice(1:10000)
 set.seed(123)
 # Randomize the order of the observations
@@ -119,8 +176,14 @@ accRslt <- cbind(accSVM, accCT, accRF)
 describe(accRslt)
 stargazer(accRslt, summary = TRUE, align = TRUE, no.space = TRUE, type="text")
 
+```
+### The Random Forest (RF) model performed the best in this case
+First, the RF model had the highest mean accuracy of 0.864, which suggests that it predicted the outcome more accurately than the other two models. Second, the RF model had the lowest standard deviation of 0.006, which suggests that its accuracy values were more consistent than the other two models. This means the model more likely to perform consistently well on new test sets.Third, the RF model had the highest maximum accuracy value of 0.874 and the highest minimum accuracy value of 0.855, which suggests that it has the best overall performance across different test sets.
+However, it is important to note that other factors such as model complexity, interpretability, and computation time may also be considered when selecting the best model for a specific task. 
 
-#4----
+## Question 4: 
+
+```{r, message=FALSE, warning=FALSE}
 library(nnet)
 nn <- function(data, model, n) {
   # split data into train and test sets
@@ -149,28 +212,16 @@ print(results)
 
 library(ggplot2)
 
-ggplot(results, aes(x = neurons)) +
-  geom_line(aes(y = train_accuracy), color = "blue") +
-  geom_line(aes(y = test_accuracy), color = "red") +
-  labs(title = "Neural Network Accuracy as a Function of Hidden Layer Size",
-       x = "Number of Neurons",
-       y = "Accuracy") +
-  theme_minimal()
-
-library(ggplot2)
-
-library(ggplot2)
-
 # Set theme
 my_theme <- theme(panel.grid.major = element_blank(),
                   panel.grid.minor = element_blank(),
                   panel.background = element_blank(),
                   axis.line = element_line(colour = "black"),
-                  axis.text = element_text(size = 14),
-                  axis.title = element_text(size = 16),
-                  plot.title = element_text(size = 20, hjust = 0.5),
+                  axis.text = element_text(size = 12),
+                  axis.title = element_text(size = 14),
+                  plot.title = element_text(size = 16, hjust = 0.5),
                   legend.position = "bottom",
-                  legend.text = element_text(size = 14, colour = "black"))
+                  legend.text = element_text(size = 12, colour = "black"))
 
 # Create plot
 ggplot(results, aes(x = neurons)) +
@@ -184,5 +235,7 @@ ggplot(results, aes(x = neurons)) +
   scale_y_continuous(labels = scales::percent_format()) +
   my_theme
 
-
-
+```
+From the graph, the line representing the performance on the training dataset looks  like what I would expect based on what I learned in the lecture. However, I expected the a sharper decrease of the performance on the test set with a corresponding increase in the number of neurons. And eventaully results in a prabola-shape.
+In more details, as the number of neurons increases from 1 to 15, we can observe that both the train and test accuracies generally improve. However, in this case, increasing the number of neurons beyond 11 does not lead to significant improvements in test accuracy and may even decrease i while the train accuracy continues to improve. This is a clear example of the trade-off between model complexity and overfitting. Furthermore, from the results, we can see that the best performance on the test and train sets are achieved with 15 neurons, and that correspond to the accuracy of 88.1% and 84.1%, respectively 
+This behavior is a common trade-off in machine learning, where increasing model complexity (number of neurons in this case) can improve the model's ability to capture more complex patterns in the data, and hence improve the performance on the training set. However, there is a risk of overfitting, where the model becomes too specialized to the training set and fails to generalize well to new data (test set in this case). This is what causes the drop in performance on the test set after reaching a peak.Overall, it is important to balance the model complexity with the risk of overfitting and generalization performance, and this requires careful model selection and evaluation.

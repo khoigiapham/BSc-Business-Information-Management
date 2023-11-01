@@ -1,0 +1,286 @@
+---
+title: "Assignment 3"
+author: "Khoi Gia Pham - 52375kg"
+output:
+  pdf_document: default
+  html_document: default
+---
+## Question 1: 
+
+```{r message=FALSE, warning=FALSE}
+#Load required packages
+library(rtweet)
+library(gtrendsR)
+library(ggplot2)
+library(dplyr)
+library(class)
+library(ROCR)
+library(cluster)
+library(ape)
+library(rpart)
+library(rpart.plot)
+library(readr)
+library(psych)
+library(stargazer)
+library(randomForest)
+#Load and prepare the dataset
+df <- read.csv("SpotifyTop10s.csv", stringsAsFactors = FALSE)
+df$X <- NULL
+df$year <- as.factor(df$year)
+#Scale the nine numerical variables on song's sonic characteristic
+df.scaled <-  scale(df[5:13])
+
+# Find cluster solution, K = 4----
+set.seed(123)
+rsltKmeans <- kmeans(df.scaled, 4) 
+# Cluster Plot against 1st 2 principal components
+clusplot(df.scaled, rsltKmeans$cluster, 
+         color=TRUE, shade=TRUE, 
+         labels=2, lines=0)
+# Find cluster solution, K = 3----
+set.seed(123)
+rsltKmeans <- kmeans(df.scaled, 3) 
+# Cluster Plot against 1st 2 principal components
+clusplot(df.scaled, rsltKmeans$cluster, 
+         color=TRUE, shade=TRUE, 
+         labels=2, lines=0)
+# Find cluster solution, K = 2----
+set.seed(123)
+rsltKmeans <- kmeans(df.scaled, 2) 
+# Cluster Plot against 1st 2 principal components
+clusplot(df.scaled, rsltKmeans$cluster, 
+         color=TRUE, shade=TRUE, 
+         labels=2, lines=0)
+
+```
+A good choice for the number of clusters should result in distinct and well-separated clusters with minimal overlap. Examining the plots helps observe the overlap between clusters, which gives  an indication of how well the clusters are separated. In general, we want to choose the number of clusters that provides a good balance between cluster separation and cluster size.
+
+Looking at the cluster plots, we can see that, in general, any number of clusters would results in overlaps.The cluster plot for 4 clusters shows significant overlap, indicating that the clusters may not be well-separated, and 4 clusters may be too many. The cluster plot for 3 clusters also shows overlap, albeit less than for 4 clusters. This suggests that 3 clusters may provide a more detailed grouping of the data, but still too much overlap.
+
+The cluster plot for 2 clusters displays the least overlap among the three plots, indicating that the data can be most reasonably separated into two distinct groups. Therefore, 2 clusters may be a good choice for this dataset, as it provides a simpler, higher-level grouping that still offers reasonable cluster separation.
+ 
+## Question 2: 
+
+```{r, message=FALSE, warning=FALSE}
+set.seed(123)
+#Run Kmeans clustering with three clusters
+rsltKmeans2 <- kmeans(df.scaled, 3) 
+# Cluster Plot against 1st 2 principal components
+clusplot(df.scaled, rsltKmeans2$cluster, 
+         color=TRUE, shade=TRUE, 
+         labels=2, lines=0)
+# Add the cluster values to the original data set
+df<- data.frame(df, cluster=as.factor(rsltKmeans2$cluster))
+
+# Make a descriptive summary per assigned cluster
+tmp <- describeBy(df[c(5:13,15)], group=rsltKmeans2$cluster)
+
+# Make a table with means and standard deviations
+# ( columns 3 and 4 in the tmp object ) of 
+# attribute scores per assigned cluster
+stargazer(cbind(tmp$`1`[3:4],tmp$`2`[3:4],tmp$`3`[3:4]),
+          align=TRUE,no.space=TRUE,summary=FALSE, type = "text")
+#Clean environment for the following questions
+remove(list=ls())
+
+```
+
+Based on the mean values of the variables in each cluster, here are some potential names for the three clusters:
+
+Energetic Dance Music: This cluster has songs with high energy, a fast tempo (relatively high bpm), and the highest danceability score, making them suitable for dancing. The songs has very low live score suggesting them are not likely live recordings.
+
+High-tempo Vocal Music: This cluster includes songs with a high tempo (high bpm), lower danceability score, and lower valence (positive mood) score, but with higher speechiness (more spoken word). The songs in this cluster tend to have a higher duration and are moderately popular.
+
+Acoustic Ballads: This cluster has songs with a slow tempo (low bpm), lower energy, danceability, and valence scores, and a very high acousticness score. The songs in this cluster tend focus on acoustic instruments and less on speech.
+
+## Question 3: 
+
+```{r}
+#Load and prepare data
+df <- read.csv("SpotifyTop50country_prepared.csv", stringsAsFactors = FALSE)
+df$year <- factor(df$year)
+df$hit <- factor(df$hit)
+df$X.1 <- NULL
+df$X <- NULL
+# Subset the data to include the 9 sonic characteristics
+dfSub <- df[,c(4:12,ncol(df))]
+# Define training and test set
+set.seed(123)
+obsTrain        <- sample(1:nrow(dfSub), ceiling(0.7*nrow(dfSub)))
+dfTrainRaw <- dfSub[obsTrain, ]
+dfTestRaw  <- dfSub[-obsTrain,]
+# Scale quantitative variables based on the mean and standard deviations 
+# of the training set (which are known prior to the predictions
+# Identify the number of columns and the numbers of column with numeric information
+nCols  <- ncol(dfSub)
+subNum <- c(1:(nCols-1))
+# Find column means and standard deviations of the attributes in the training sets
+trainAvg <- colMeans(dfTrainRaw[subNum])
+trainStd <- apply(dfTrainRaw[subNum], 2, sd)
+#Scale the data
+dfTrainScaled         <- dfTrainRaw
+dfTrainScaled[subNum] <- 
+  scale(dfTrainScaled[subNum])
+dfTestScaled         <- dfTestRaw
+dfTestScaled[subNum] <- 
+  scale(dfTestScaled[subNum],
+        center = trainAvg[subNum],
+        scale  = trainStd[subNum])
+#3.1 K-Nearest neighbors----
+# Make predictions with the knn model, where k = 5 for the scaled data
+predKNN   <- knn(dfTrainScaled[, -nCols], 
+                 dfTestScaled[, -nCols],
+                 dfTrainScaled$hit, k = 5)
+yObserved <- dfTestScaled$hit
+# Make confusion table with absolute numbers
+tbl <- table(Predictions = predKNN,
+             Observed    = yObserved)
+accKNN <- mean(predKNN == yObserved)
+#3.2  Logit----
+mdl <- hit ~ .
+# Fit logit regression model on the training data
+rsltLogit <- glm(mdl, data = dfTrainScaled, family = "binomial")
+# Make predictions on the test set, predLogit contains estimated class
+# probabilities (not the predicted classes)
+predLogit <- predict(rsltLogit, dfTestScaled, type="response")
+# Assessing the classification performance required converting the estimated 
+# class probabilities to class predictions, with type factor
+classLogit <- factor(as.numeric(predLogit > 0.5),
+                     levels = c(0, 1),
+                     labels = c("FALSE", "TRUE"))
+# Percentage of correctly classified instances
+accLogit <- mean(classLogit == dfTestScaled$hit)
+
+#3.3 Random Forest----
+rsltRF    <- randomForest(mdl, data=dfTrainScaled,
+                          ntree = 200, mtry = round(sqrt((length(all.vars(mdl)) - 1))),
+                          importance = TRUE)
+predRF   <- predict(rsltRF, dfTestScaled, type = "class")
+accRF    <- mean(predRF  == dfTestScaled$hit)
+
+# 3.4 A "baseline" model that predicts every song as not being a hit ----
+predBaseline <- rep(FALSE, nrow(dfTestScaled))
+accBaseline <- mean(predBaseline == dfTestScaled$hit)
+accq3 <- data.frame(
+  "Logit:" = accLogit,
+  "Random forest:" = accRF,
+  "K-nearest neighbors:" = accKNN,
+  "Baseline" = accBaseline
+)
+stargazer(accq3,
+          align=TRUE,no.space=TRUE,
+          summary=FALSE,title = "Accuracy",
+          type="text")
+
+```
+
+## Question 4: 
+
+```{r, message=FALSE, warning=FALSE}
+yObserved <- dfTestScaled$hit
+# Make confusion table with absolute numbers
+tblLogit <- table(Predictions = classLogit,
+                  Observed    = yObserved)
+tblRF <- table(Predictions = predRF,
+               Observed    = yObserved)
+tblKNN <- table(Predictions = predKNN,
+                Observed    = yObserved)
+tblBaseline <- table(Predictions = predBaseline, 
+                     Observed = yObserved)
+tblBaseline <- rbind(tblBaseline, c(0, 0))
+rownames(tblBaseline) <- c("False", "True")
+#Create confusion matrix table
+tblLogit <- tblLogit[c(2,1), c(2,1)]
+tblRF <- tblRF[c(2,1), c(2,1)]
+tblKNN <- tblKNN[c(2,1), c(2,1)]
+tblBaseline <- tblBaseline[c(2,1), c(2,1)]
+```
+
+Logit
+```{r}
+tblLogit
+```
+Random Forest
+```{r}
+tblRF
+```
+K-Nearest neighbors
+```{r}
+tblRF
+```
+Baseline model
+```{r}
+tblBaseline
+```
+From question 3, the baseline model (which always predicts that a song is not going to be a hit) has an accuracy of 75%, which is comparable to the accuracy of the other three models. This is likely due to the fact that the majority class (songs that are not international hits) is much more prevalent in the dataset than the minority class (songs that are international hits).
+
+Specifically, from the confusion matrices, we can see that in all four models, the number of false negatives (i.e., songs that are actually international hits but are predicted not to be) is much higher than the number of false positives (i.e., songs that are not actually international hits but are predicted to be). This suggests that the models are biased towards predicting that a song is not going to be an international hit, which is consistent with the prevalence of the majority class in the dataset.
+
+Since only a small proportion of the songs in the dataset are actually international hits, this baseline model may have a high accuracy, but it is not useful for practical purposes, as it does not predict any positive cases. Furthermore, In such imbalanced datasets, accuracy can be a misleading metric of model performance.
+
+## Question 5:
+Accuracy measures the overall correctness of the model's predictions, but it does not distinguish between the types of errors made by the model. In cases where the dataset is imbalanced with a significant number of negative samples, it may be crucial to focus on particular types of errors, such as false positives or false negatives, depending on the problem being addressed. Furthermore, if we consider the ratio of predicted positive cases, we can more accurately evaluate the performance of the baseline model, which always predicts FALSE. Hence, one of the three alternative measures (specificity, sensitivity or precision) which has TN or TP ratio in their formula, by nature, might be preferable.
+
+Among the three alternative measures, precision is the metric that is relevant with the goal of predicting whether a song is likely to be an international hit.Precision focuses more in the positive class than in the negative class, it actually measures the probability of correct detection of positive values.
+
+If the number of negative samples is significantly larger, as it is in this cases, the false positive rate increases at a slower pace. This is because the true negatives in the denominator of the false positive rate (FP+TN) are likely to be very high, which makes this metric smaller. However, precision is not influenced by a large number of negative samples since it measures the number of true positives out of the samples predicted as positives (TP+FP).
+
+## Question 6:
+```{r}
+#Prepare for making performance measures
+prd.Logit <- prediction(predLogit, 
+                        dfTestScaled$hit)
+predRFprob <- predict(rsltRF,dfTestScaled, type="prob")[,2]
+prd.RF <- prediction(predRFprob, 
+                        dfTestScaled$hit)
+#Make classification performance measures
+prf.Logit <- performance(prd.Logit, 
+                         measure = "tpr", 
+                         x.measure = "fpr")
+prf.RF <- performance(prd.RF, 
+                         measure = "tpr", 
+                         x.measure = "fpr")
+#Make the ROC plot
+plot(prf.Logit, lty =1, lwd =2.0, col = rainbow(5)[1])
+plot(prf.RF, lty =1, lwd =2.0, col = rainbow(5)[4], add=TRUE)
+abline(a = 0, b = 1, lty = 3, lwd = 1.5)
+legend(0.6,0.5,c("Logit","RandomForest"),col=c(rainbow(5)[1],rainbow(5)[4]),lwd=3)
+#Compute AUC
+#Logit
+performance(prd.Logit, measure = "auc")@y.values
+#RandomForest   
+performance(prd.RF, measure = "auc")@y.values
+
+```
+
+## Question 7:
+```{r}
+#The confusion matrix of the Random Forest model
+tblRF
+```
+Probabilities of true positives (TP), false positives (FP), true negatives (TN), and false negatives (FN), based on the confusion matrix:
+
+1. TP = 5 / 159 = 0.03
+2. FP = 34 / 159 = 0.21
+3. TN = 116 / 159 = 0.73
+4. FN = 4 / 159 = 0.03
+
+The expected value of the decision rule for each possible outcome:
+
+1. If the model predicts a true positive (i.e., a song that is actually an international hit), the expected value is:
+(1 * €1,300,000) - (1 * €500,000) = €800,000
+2. If the model predicts a false positive (i.e., a song that is not an international hit, but is produced and promoted), the expected value is:
+(0 * €1,300,000) - (1 * €500,000) = -€500,000
+3. If the model predicts a true negative (i.e., a song that is not an international hit and is not produced or promoted), the expected value is:
+(0 * €1,300,000) - (0 * €500,000) = €0
+4. If the model predicts a false negative (i.e., a song that would have been an international hit if produced or promoted but is not produced or promoted), the expected value is: - (0 * €500,000) = €0
+
+Expected Value = (TP * €800,000) + (FP * (-€500,000)) + (TN * €0) + (FN * €0)
+= (0.03 * €800,000) + (0.21 * (-€500,000)) + (0.73 * €0) + (0.03 * €0)
+= -€81000
+
+Meanwhile, the expected value of the baseline scenario for comparison is to not produce and promote any songs = €0
+
+So, the expected value of the decision would result in a loss of €81,000. This means that on average, the label can expect to lose money by using the random forest model to decide whether to produce and promote a new song, given its relatively poor performance in identifying international hits. Therefore, it is not advisable for the label to use this approach.
+
+
