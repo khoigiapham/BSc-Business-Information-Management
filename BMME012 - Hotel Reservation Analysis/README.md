@@ -1,8 +1,8 @@
-# Hotel Reservations Analysis Assignment 🏨
+# Hotel Reservations Analysis 🏨
 
 ## Overview
 
-This assignment focuses on analyzing a dataset of hotel reservations with the help of multiple machine learning models. The objective is to predict the likelihood of a booking being canceled based on various attributes. The dataset consists of 36,275 hotel reservations with multiple features like the number of adults, type of meal plan, room type, lead time, and many others.
+This project focuses on analyzing a dataset of hotel reservations with the help of multiple machine learning models. The objective is to predict the likelihood of a booking being canceled based on various attributes. The dataset consists of 36,275 hotel reservations with multiple features like the number of adults, type of meal plan, room type, lead time, and many others.
 
 ## Data Preprocessing
 
