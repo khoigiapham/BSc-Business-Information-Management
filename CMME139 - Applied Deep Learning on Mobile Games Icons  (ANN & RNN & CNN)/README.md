@@ -1,4 +1,4 @@
-# Applied Deep Learning on Mobile Games Icons (ANN, RNN, CNN)
+# Applied Deep Learning on Mobile Games Icons (ANN, RNN, CNN) 🎮🧠🤖
 
 ## Description
 
