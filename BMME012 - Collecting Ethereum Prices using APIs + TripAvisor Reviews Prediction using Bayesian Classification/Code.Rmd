@@ -1,0 +1,238 @@
+---
+title: "Assignment 4"
+author: "Khoi Gia Pham - 52375kg"
+output:
+  pdf_document: default
+  html_document: default
+---
+## Question 1: 
+
+```{r message=FALSE, warning=FALSE}
+#Load required packages
+library(jsonlite)
+library(ggplot2)
+library(syuzhet)
+library(arules)
+library(arulesViz)
+library(e1071)
+library(ROCR)
+library(randomForest)
+library(stargazer)
+
+# Get from...to date in Unix time stamp
+to <- as.numeric(as.POSIXct(Sys.Date()))
+from <- as.numeric(as.POSIXct(Sys.Date()-365))
+# Set the URL for Coin Gecko API
+base_url <- "https://api.coingecko.com/api/v3/coins/ethereum/market_chart/range?vs_currency=usd"
+jsonETH<- fromJSON(paste0(base_url,"&from=", from, "&to=", to))
+# Convert the list to a data frame
+df <- as.data.frame(jsonETH$prices)
+colnames(df) <- c("Date", "Price")
+# Resulting data frame
+df$Date <- as.POSIXlt(df$Date/1e3, tz="GMT", origin="1970-01-01")
+head(df)
+tail(df)
+str(df)
+```
+
+## Question 2: 
+
+```{r, message=FALSE, warning=FALSE}
+# Subset the dataframe to keep prices for the desired date range
+subset_df <- subset(df, Date >= "2022-05-08" & Date <= "2023-02-08")
+# Convert the Date variable to POSIXct format for ggplot 
+subset_df$Date <- as.POSIXct(subset_df$Date)
+# Generate the plot
+ggplot(subset_df, aes(x = Date, y = Price)) +
+  geom_line(color = "blue") +
+  geom_vline(xintercept = as.numeric(as.POSIXct("2022-09-15")), linetype = "dotted", color = "black") +
+  labs(x = "Date", y = "Prices (USD)")
+```
+
+## Question 3: 
+By looking at the chart we cannot reliably tell if the Ethereum merge affected the price of Ether. According to the assignment description, the Ethereum merge, a significant update, was intended to improve the network's performance, energy efficiency, and security, which would logically have a positive impact on its price. However, from the graph, the price of ETH experienced a steep drop from 1635 to around 1300 after the merge on September 15, 2022. Besides the price had been experiencing a downward trend since May.
+
+It's possible that the price drop is coincidental with the merge. Nevertheless, it's crucial to bear in mind that correlation doesn't necessarily equal causation. In general, to draw dependable conclusions, a combination of factors, such as market sentiment, overall cryptocurrency market trends, global economic events, regulatory changes, and technological advancements, should be considered.
+
+Other analysis from our course could have been conducted are:
+
+1.	Regression analysis: Use a regression model to analyze the relationship between Ether's price and the Ethereum merge, controlling for other factors that may influence the price, such as Bitcoin's price, overall market capitalization, trading volume, and global macroeconomic events.
+2.	Sentiment analysis: Examine social media, news articles, and forum discussions around the time of the Ethereum merge to gauge the overall sentiment of the crypto community. Positive or negative sentiment could impact Ether's price, and understanding sentiment shifts can help determine the role the Ethereum merge played.
+
+And other possible approaches outside our course are:
+
+1.	Event study: Analyze the price movement around the merge date and compare it with the price movement during a similar period without significant events. This approach could help understand if the price change was abnormal in relation to the merge.
+2.	Comparative analysis: Compare Ether's price performance with other major cryptocurrencies around the time of the merge. If Ether's price behaved differently compared to other cryptocurrencies, it might indicate the merge had a specific impact on its price.
+3.	Technical analysis: Analyze Ether's price charts before and after the merge to identify patterns, trends, and potential key support and resistance levels. This analysis could help determine whether the merge had any significant impact on the overall price trend.
+4.	Correlation analysis: Investigate the correlation between Ether's price and other relevant factors (e.g., network activity, gas fees, and number of active validators) around the time of the merge. A change in correlation could suggest the merge's influence on Ether's price.
+
+## Question 4: 
+
+```{r, message=FALSE, warning=FALSE}
+# Remove stuffs from the global environment
+remove(list=ls())
+#Load and prepare data
+df <- read.csv("data_tripadvisor.csv")
+df$helpful <- factor(ifelse(df$helpful_votes >= 1, "yes", "no"), levels = c("yes","no"))
+#Inspect data
+head(df)
+str(df)
+```
+
+## Question 5: 
+
+```{r, message=FALSE, warning=FALSE}
+df$review_body <- tolower(trimws(df$review_body))
+# sentiment <- get_nrc_sentiment(df$review_body)
+# Store the sentiment scores in an RDS file
+# saveRDS(sentiment, "sentiment.rds")
+# Load the sentiment scores back
+sentiment <- readRDS("C:/Users/pkhoi/Erasmus University Rotterdam/2 Big Data/AS 4/sentiment.rds")
+# Add column sentiment to df
+df$sentiment <- sentiment$positive - sentiment$negative
+df$sentiment <- as.factor(ifelse(df$sentiment > 5, "positive", "not positive"))
+```
+
+## Question 6:
+
+```{r}
+# Count the number of reviews that contain the word "hotel" and have a positive sentiment
+hotel_positive <- sum(grepl("hotel", df$review_body) & df$sentiment == "positive")
+# Count the number of reviews that contain the word "beach" and have a positive sentiment
+beach_positive <- sum(grepl("beach", df$review_body) & df$sentiment == "positive")
+# Count the number of reviews that have a positive sentiment
+total_positive <- sum(df$sentiment == "positive")
+# Calculate the conditional probabilities
+prob_hotel_given_positive <- hotel_positive / total_positive
+prob_beach_given_positive <- beach_positive / total_positive
+# Print results
+cat("P(hotel|positive):", prob_hotel_given_positive)
+cat("P(beach|positive):", prob_beach_given_positive)
+```
+
+## Question 7:
+
+```{r}
+prob_positive <- total_positive / nrow(df)
+#a----
+#Calculate the conditional probability of a review containing "hotel" but not "beach", given positive sentiment
+prob_hotel_not_beach_given_positive <- prob_hotel_given_positive * (1 - prob_beach_given_positive)
+# Calculate the probability of positive sentiment given a review containing "hotel" but not "beach"
+prob_positive_given_hotel_not_beach <- prob_hotel_not_beach_given_positive * prob_positive / 
+  (prob_hotel_not_beach_given_positive * prob_positive + 
+     (1 - prob_hotel_not_beach_given_positive) * (1 - prob_positive))
+#b----
+# Calculate the conditional probability of a review containing "beach" but not "hotel", given positive sentiment
+prob_beach_not_hotel_given_positive <- prob_beach_given_positive * (1 - prob_hotel_given_positive)
+# Calculate the probability of positive sentiment given a review containing "beach" but not "hotel"
+prob_positive_given_beach_not_hotel <- prob_beach_not_hotel_given_positive * prob_positive / 
+  (prob_beach_not_hotel_given_positive * prob_positive + 
+     (1 - prob_beach_not_hotel_given_positive) * (1 - prob_positive))
+# Print results
+cat("P(positive|hotel, not beach):", prob_beach_not_hotel_given_positive)
+cat("P(positive|beach, not hotel):", prob_positive_given_beach_not_hotel)
+```
+a) The probability that a review containing the word "hotel", but not the word "beach", has positive sentiment can be presented as:
+
+P(positive | hotel, not beach) = P(hotel, not beach | positive) * P(positive) / P(hotel, not beach)
+
+where P(positive | hotel, not beach) is the probability of a positive sentiment given that a review contains the word "hotel", but not the word "beach", and P(hotel, not beach | positive) is the conditional probability of a review containing the words "hotel" and not "beach", given a positive sentiment.    
+
+Calculate P(hotel, not beach | positive) by using the following formula :
+
+P(hotel, not beach | positive) = P(hotel | positive) * P(not beach | positive)
+
+where P(hotel | positive) is the conditional probability of a review containing the word "hotel", given a positive sentiment, and P(not beach | positive) is the conditional probability of a review not containing the word "beach", given a positive sentiment.
+
+Calculate P(hotel, not beach) using this formula:
+
+P(hotel, not beach) = P(hotel, not beach | positive) * P(positive) + P(hotel, not beach | not positive) * P(not positive)
+
+b) Similarly, the probability that a review containing the word "beach", but not the word "hotel", has positive sentiment can be calculated by using this formula:
+
+P(positive | beach, not hotel) = P(beach, not hotel | positive) * P(positive) / P(beach, not hotel)
+
+The following steps follow that in (a), intuitively.
+
+## Question 8:
+```{r, message=FALSE, warning=FALSE}
+# Create variables indicating whether each string is present in the review text
+df$hotel <- grepl("hotel", df$review_body, ignore.case = TRUE)
+df$staff <- grepl("staff", df$review_body, ignore.case = TRUE)
+df$you <- grepl("you", df$review_body, ignore.case = TRUE)
+df$breakfast <- grepl("breakfast", df$review_body, ignore.case = TRUE)
+df$room <- grepl("room", df$review_body, ignore.case = TRUE)
+df$day <- grepl("day", df$review_body, ignore.case = TRUE)
+df$clean <- grepl("clean", df$review_body, ignore.case = TRUE)
+df$noise <- grepl("noise", df$review_body, ignore.case = TRUE)
+df$weather <- grepl("weather", df$review_body, ignore.case = TRUE)
+# Subset the data to include only helpful reviews
+helpful_reviews <- df[df$helpful == "yes", ]
+# Create a transactions object using the columns indicating which strings occur in a review
+trans <- as(helpful_reviews[, c("hotel", "staff", "you", "breakfast", "room", "day", "clean", "noise", "weather")], "transactions")
+# Use apriori to mine the association rules
+my_rules <- apriori(trans, parameter = list(support = 0.2, confidence = 0.1, maxlen = 2))
+# Output the top 10 rules
+inspect(head(sort(my_rules,by="lift"),10))
+# Plot a scatterplot of the association rule confidence and support
+plot(my_rules)
+# Plot a graph of all the association rules
+plot(my_rules, method = "graph")
+```
+
+## Question 9:
+```{r}
+# Make training and test sets
+pctTrain <- 0.7
+numTrain <- round(pctTrain*nrow(df))
+set.seed(123)
+obsTrain <- sample(1:nrow(df), numTrain)
+dfTrain <- df[obsTrain,]
+dfTest  <- df[-obsTrain,]
+# Define model
+mdl <- helpful ~ hotel + staff + you + breakfast + 
+  room + day + clean + noise + weather + sentiment
+# Fit naive Bayes model
+rsltNB <- naiveBayes(mdl, data=dfTrain)
+# Predicted classification test set
+predNB <- predict(rsltNB, dfTest, type="class")
+# Confusion table and overall accuracy
+table(Predicted = predNB, Observed = dfTest$helpful)
+accNB <- mean(predNB == dfTest$helpful)
+# Fit naive Random Forest model
+rsltRF    <- randomForest(mdl, data=dfTrain)
+classRF   <- predict(rsltRF, dfTest, type = "class")
+accRF    <- mean(classRF  == dfTest$helpful)
+#Compare the accuracy
+Accuracy <- cbind (accNB, accRF)
+Accuracy
+#Find prediction probability for NB and RF models
+predNB  <- predict(rsltNB, dfTest, type = "raw")[,1]
+predRFprob <- predict(rsltRF,dfTest, type="prob")[,1]
+# Determine predictive performance measures
+prd.NB  <- prediction(predNB, dfTest$helpful)
+prd.RF <- prediction(predRFprob, dfTest$helpful)
+# Prepare ROC
+prf.NB  <- performance(prd.NB, measure = "tpr", x.measure = "fpr")
+prf.RF  <- performance(prd.RF, measure = "tpr", x.measure = "fpr")
+# Plot
+plot(prf.NB,  lty =1, lwd =2.0, col = "red")
+plot(prf.RF, lty =1, lwd =2.0, col = "darkgreen", add = TRUE)
+abline(a = 0, b = 1, lty = 3, lwd = 1.5)
+legend(0.6, 0.3, c("Naive Bayes", "RandomForest"), 
+       col = c("red", "darkgreen"),
+       lty = c(1), lwd = 2)
+# AUC values
+AUC <- cbind(
+  auc.NB  = performance(prd.NB,  measure = "auc")@y.values[[1]],  
+  auc.RF  = performance(prd.RF,  measure = "auc")@y.values[[1]]
+)
+round(AUC, 3)
+```
+Based on the AUC (Area Under the Curve) and accuracy values provided, the Naive Bayes model performs better than the Random Forest model in this case. The AUC of Naive Bayes is 0.5747866, whereas the AUC of Random Forest is 0.5451903. Similarly, the accuracy of Naive Bayes is 0.5773333, while the accuracy of Random Forest is 0.572.
+
+The AUC is an important metric for evaluating the performance of a classifier, as it measures the classifier's ability to distinguish between classes across different classification thresholds. A higher AUC value indicates a better classifier. In this case, the Naive Bayes model has a higher AUC, suggesting that it has a better ability to discriminate between the classes compared to the Random Forest model.
+
+Accuracy is another performance metric that compares the number of correct predictions to the total number of predictions made. The Naive Bayes model has a slightly higher accuracy than the Random Forest model, suggesting that it is better at making correct predictions.
+
+One reason the Naive Bayes model may have performed better in this case is its underlying assumption of independence among features, which allows for the updated class probabilities to be calculated as the product of the individual lift factors and the prior class probability. Although this assumption may not always hold true in real-world data, it can still result in a relatively accurate and efficient classifier for certain datasets. In this specific case, the Naive Bayes model appears to have been more effective than the Random Forest model in classifying the data.
