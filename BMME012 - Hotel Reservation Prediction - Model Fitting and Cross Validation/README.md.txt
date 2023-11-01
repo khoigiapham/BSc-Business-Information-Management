@@ -1,4 +1,4 @@
-# Hotel Reservations Analysis Assignment 🏨
+# Hotel Reservations Prediction 🏨 Model Fitting, Overfitting, and Cross Validation
 
 ## Overview
 
