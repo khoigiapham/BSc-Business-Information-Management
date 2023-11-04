@@ -22,6 +22,6 @@
 
 ## 🌌 Connect with Me:
 - 🌐 [LinkedIn](https://www.linkedin.com/in/khoi-pham2709/)
-- 💌 Email me at khoi127d@gmail.com
+- 💌 Email me at pgkhoi279@gmail.com
 
 
