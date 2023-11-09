@@ -4,6 +4,7 @@
 
 ### 🛰️ Courses: 
 - 🌌 BM02BIM - Designing Business Application
+  - [ConcluDishes - Mobile application to combat food wastages](https://github.com/khoigiapham/MSc-Business-Information-Management-2223/tree/main/BM02BIM%20-%20Designing%20Business%20Application)
 - 🌠 BM04BIM - Big Data Management and Analytics
 - 🌍 BM06BIM - Research Method
 - 👨‍🚀 BMME012 - Big data and Business Analytics
