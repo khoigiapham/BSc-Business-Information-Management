@@ -1,6 +1,6 @@
 ---
 title: "Assignment 4"
-author: "Khoi Gia Pham - 52375kg"
+author: "Khoi Gia Pham - 523755kg"
 output:
   pdf_document: default
   html_document: default
